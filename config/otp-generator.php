@@ -70,4 +70,14 @@ return [
     |
     */
     'maximumOtpsAllowed' => env('MAXIMUM_OTPS_ALLOWED', 5),
+
+    /*
+    |--------------------------------------------------------------------------
+    |  Delete otp after successful validation
+    |--------------------------------------------------------------------------
+    |
+    | When the option is set OTPs are deleted once they have been validated successfully
+    |
+    */
+    'deleteAfterValidation' => env('OTP_DELETE_AFTER_VALIDATION', false),
 ];

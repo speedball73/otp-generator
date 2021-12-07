@@ -52,6 +52,13 @@ class OtpGenerator
     protected $maximumOtpsAllowed;
 
     /**
+     * Delete OTP once it has been validated successfully
+     *
+     * @var bool
+     */
+    protected $deleteAfterValidation;
+
+    /**
      * Maximum number of times to allowed to validate
      *
      * @var int
@@ -67,6 +74,7 @@ class OtpGenerator
         $this->deleteOldOtps = config('otp-generator.deleteOldOtps');
         $this->maximumOtpsAllowed = config('otp-generator.maximumOtpsAllowed');
         $this->allowedAttempts = config('otp-generator.allowedAttempts');
+        $this->deleteAfterValidation = config('otp-generator.deleteAfterValidation');
     }
 
     /**
@@ -111,13 +119,6 @@ class OtpGenerator
                 'generated_at' => Carbon::now(),
             ]);
         } else {
-            if ($otp->no_times_generated == $this->maximumOtpsAllowed) {
-                return (object) [
-                    'status' => false,
-                    'message' => "Reached the maximum times to generate OTP",
-                ];
-            }
-
             $otp->update([
                 'identifier' => $identifier,
                 'token' => $this->useSameToken ?  $otp->token :  $this->createPin(),
@@ -126,6 +127,12 @@ class OtpGenerator
             ]);
         }
 
+        if ($otp->no_times_generated == $this->maximumOtpsAllowed) {
+            return (object) [
+                'status' => false,
+                'message' => "Reached the maximum times to generate OTP",
+            ];
+        }
 
         $otp->increment('no_times_generated');
 
@@ -165,6 +172,10 @@ class OtpGenerator
         $otp->increment('no_times_attempted');
 
         if ($otp->token == $token) {
+            if ($this->deleteAfterValidation) {
+                $otp->delete();
+            }
+
             return (object) [
                 'status' => true,
                 'message' => 'OTP is valid',
